@@ -42,5 +42,4 @@ const Header = ({ siteContent, editMode, updateContact }) => {
     </header>
   );
 };
-
 export default Header;
