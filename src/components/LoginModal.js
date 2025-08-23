@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 
-const LoginModal = ({ showLogin, setShowLogin, loginForm, setLoginForm, handleLogin, loginCredentials }) => {
+const LoginModal = ({ 
+  showLogin, 
+  setShowLogin, 
+  loginForm, 
+  setLoginForm, 
+  handleLogin,
+  isLoginDisabled // Add this prop if using enhanced version
+}) => {
   const [showPassword, setShowPassword] = useState(false);
 
   if (!showLogin) return null;
@@ -45,18 +52,15 @@ const LoginModal = ({ showLogin, setShowLogin, loginForm, setLoginForm, handleLo
               </button>
             </div>
           </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Login
-          </button>
+           <button
+              type="submit"
+              disabled={isLoginDisabled} // Add this if using enhanced version
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoginDisabled ? 'Please wait...' : 'Login'}
+            </button>
         </form>
-        <div className="mt-4 p-3 bg-gray-100 rounded text-sm">
-          <p><strong>Demo Credentials:</strong></p>
-          <p>Username: {loginCredentials.username}</p>
-          <p>Password: {loginCredentials.password}</p>
-        </div>
+        
       </div>
     </div>
   );

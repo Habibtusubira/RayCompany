@@ -144,32 +144,91 @@ useEffect(() => {
 }, []);
 
 // Login function using admin_settings table
+// Add this state for login attempts
+const [loginAttempts, setLoginAttempts] = useState(0);
+const [isLoginDisabled, setIsLoginDisabled] = useState(false);
+
+// Enhanced login function with rate limiting
 const handleLogin = async () => {
+  if (isLoginDisabled) {
+    alert('Too many failed attempts. Please try again later.');
+    return;
+  }
+
   try {
+    // Verify credentials against admin_settings table
     const { data, error } = await supabase
-      .from("admin_settings")
-      .select("admin_username, admin_password")
-      .eq("admin_username", loginForm.username)
+      .from('admin_settings')
+      .select('*')
+      .eq('admin_username', loginForm.username)
+      .eq('admin_password', loginForm.password)
       .single();
 
     if (error) {
-      alert("Login error: " + error.message);
+      console.error('Database query error:', error);
+      handleFailedLogin();
       return;
     }
 
-    if (data && data.admin_password === loginForm.password) {
-      // ✅ Correct credentials
+    if (data) {
+      // Successful login
       setIsLoggedIn(true);
       setShowLogin(false);
-      localStorage.setItem("isAdminLoggedIn", "true"); // keep logged in
-      setLoginForm({ username: "", password: "" });
+      setLoginForm({ username: '', password: '' });
+      setLoginAttempts(0);
+      
+      // Store login state
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('loginTimestamp', Date.now().toString());
     } else {
-      alert("Invalid credentials");
+      // Failed login
+      handleFailedLogin();
     }
-  } catch (err) {
-    alert("Unexpected error: " + err.message);
+  } catch (error) {
+    console.error('Login error:', error);
+    handleFailedLogin();
   }
 };
+
+// Handle failed login attempts
+const handleFailedLogin = () => {
+  const newAttempts = loginAttempts + 1;
+  setLoginAttempts(newAttempts);
+  
+  if (newAttempts >= 3) {
+    setIsLoginDisabled(true);
+    setTimeout(() => {
+      setIsLoginDisabled(false);
+      setLoginAttempts(0);
+    }, 30000); // 30 second lockout
+    alert('Too many failed attempts. Please try again in 30 seconds.');
+  } else {
+    alert(`Invalid credentials. ${3 - newAttempts} attempts remaining.`);
+  }
+};
+
+// Check session expiration on app load
+useEffect(() => {
+  const checkSession = () => {
+    const loginTimestamp = localStorage.getItem('loginTimestamp');
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    
+    if (isLoggedIn && loginTimestamp) {
+      const eightHours = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+      const currentTime = Date.now();
+      
+      if (currentTime - parseInt(loginTimestamp) > eightHours) {
+        // Session expired
+        handleLogout();
+        alert('Your session has expired. Please log in again.');
+      } else {
+        setIsLoggedIn(true);
+      }
+    }
+  };
+  
+  checkSession();
+}, []);
 
 // Logout function
 const handleLogout = () => {
