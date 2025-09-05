@@ -8,11 +8,13 @@ class DataManager {
     const siteContentFromStorage = localStorage.getItem('siteContent');
     const projectsFromStorage = localStorage.getItem('projects');
     const adminFromStorage = localStorage.getItem('admin');
+    const contactSubmissionsFromStorage = localStorage.getItem('contactSubmissions');
 
     this.data = {
       siteContent: siteContentFromStorage ? JSON.parse(siteContentFromStorage) : { ...data.siteContent },
       projects: projectsFromStorage ? JSON.parse(projectsFromStorage) : [...data.projects],
       admin: adminFromStorage ? JSON.parse(adminFromStorage) : { ...data.admin },
+      contactSubmissions: contactSubmissionsFromStorage ? JSON.parse(contactSubmissionsFromStorage) : [],
     };
   }
 
@@ -92,6 +94,20 @@ class DataManager {
   // Method to get admin username (without password)
   getAdminUsername() {
     return this.data.admin.username;
+  }
+
+  // Add a new contact submission
+  addContactSubmission(submission) {
+    const newSubmission = {
+      ...submission,
+      id: this.data.contactSubmissions.length > 0
+        ? Math.max(...this.data.contactSubmissions.map(s => s.id)) + 1
+        : 1,
+      submitted_at: new Date().toISOString()
+    };
+    this.data.contactSubmissions = [newSubmission, ...this.data.contactSubmissions];
+    localStorage.setItem('contactSubmissions', JSON.stringify(this.data.contactSubmissions));
+    return Promise.resolve(newSubmission);
   }
 }
 

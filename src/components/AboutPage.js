@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Award, Users, Target, Eye, Heart, Building2, Calendar, MapPin } from 'lucide-react';
+import { Award, Target, Eye, Heart } from 'lucide-react';
 
 const AnimatedCounter = ({ end, duration = 2000 }) => {
   const [count, setCount] = useState(0);
@@ -50,35 +50,23 @@ const AnimatedCounter = ({ end, duration = 2000 }) => {
 };
 
 const AboutPage = ({ siteContent, editMode, updateContent }) => {
-  // Sample data - you can replace this with your actual data
-  const [aboutData, setAboutData] = React.useState({
-    mission: "To create innovative, sustainable architectural solutions that enhance lives and communities while respecting the environment.",
-    vision: "To be the leading architectural firm in East Africa, recognized for design excellence and transformative projects.",
-    values: [
-      { icon: <Eye size={24} />, title: "Innovation", description: "Embracing new ideas and technologies" },
-      { icon: <Heart size={24} />, title: "Passion", description: "Loving what we do in every project" },
-      { icon: <Target size={24} />, title: "Excellence", description: "Striving for the highest quality in all aspects" }
-    ],
-    team: [
-      { name: "John Mugisha", role: "Principal Architect", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80", bio: "20+ years of experience in commercial and residential architecture." },
-      { name: "Sarah Nakato", role: "Senior Designer", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80", bio: "Specializes in sustainable design and green building practices." },
-      { name: "David Ochieng", role: "Project Manager", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80", bio: "Expert in managing large-scale construction projects efficiently." }
-    ],
-    stats: [
-      { icon: <Calendar size={32} />, value: "12+", label: "Years Experience" },
-      { icon: <Building2 size={32} />, value: "150+", label: "Projects Completed" },
-      { icon: <Users size={32} />, value: "25+", label: "Team Members" },
-      { icon: <MapPin size={32} />, value: "5+", label: "Cities Served" }
-    ],
-    history: "Founded in 2012, Ergonomics has grown from a small design studio to a full-service architectural firm serving clients across Uganda and East Africa. Our journey began with a focus on residential projects and has expanded to include commercial, institutional, and hospitality architecture.",
-    approach: "We believe in a collaborative approach to design, working closely with our clients to understand their vision, needs, and aspirations. Our process combines creative design thinking with technical expertise to deliver spaces that are both beautiful and functional."
-  });
+  // The 'about' data is now expected to be part of the siteContent prop.
+  // We provide a fallback structure to prevent errors if the data isn't loaded yet.
+  const aboutData = siteContent.about || {
+    mission: '',
+    vision: '',
+    values: [],
+    team: [],
+    stats: [],
+    history: '',
+    approach: ''
+  };
 
   const updateAboutData = (field, value) => {
-    setAboutData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    // This function now updates the main siteContent state via the updateContent prop
+    // by constructing a new 'about' object.
+    const updatedAbout = { ...aboutData, [field]: value };
+    updateContent('about', updatedAbout);
   };
 
   return (
@@ -143,7 +131,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
             </div>
             <h3 className="text-xl font-semibold mb-3">Our Values</h3>
             <div className="space-y-4">
-              {aboutData.values.map((value, index) => (
+              {aboutData.values?.map((value, index) => (
                 <div key={index}>
                   {editMode ? (
                     <div className="space-y-2">
@@ -151,7 +139,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                         type="text"
                         value={value.title}
                         onChange={(e) => {
-                          const newValues = [...aboutData.values];
+                          const newValues = [...(aboutData.values || [])];
                           newValues[index].title = e.target.value;
                           updateAboutData('values', newValues);
                         }}
@@ -161,7 +149,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                         type="text"
                         value={value.description}
                         onChange={(e) => {
-                          const newValues = [...aboutData.values];
+                          const newValues = [...(aboutData.values || [])];
                           newValues[index].description = e.target.value;
                           updateAboutData('values', newValues);
                         }}
@@ -186,7 +174,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
         {/* Stats Section */}
         <div className="bg-gray-50 rounded-xl p-8 mb-20">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {aboutData.stats.map((stat, index) => (
+            {aboutData.stats?.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-blue-600 mb-2 flex justify-center">
                   {stat.icon}
@@ -197,7 +185,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                       type="text"
                       value={stat.value}
                       onChange={(e) => {
-                        const newStats = [...aboutData.stats];
+                        const newStats = [...(aboutData.stats || [])];
                         newStats[index].value = e.target.value;
                         updateAboutData('stats', newStats);
                       }}
@@ -207,7 +195,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                       type="text"
                       value={stat.label}
                       onChange={(e) => {
-                        const newStats = [...aboutData.stats];
+                        const newStats = [...(aboutData.stats || [])];
                         newStats[index].label = e.target.value;
                         updateAboutData('stats', newStats);
                       }}
@@ -217,7 +205,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                 ) : (
                   <>
                     <h3 className="text-3xl font-bold text-blue-800">
-                      <AnimatedCounter end={parseInt(stat.value)} duration={2000} />+
+                      <AnimatedCounter end={parseInt(stat.value) || 0} duration={2000} />+
                     </h3>
                     <p className="text-gray-600">{stat.label}</p>
                   </>
@@ -261,7 +249,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
         <div className="mb-16">
           <h3 className="text-3xl font-bold text-center mb-12">Our Team</h3>
           <div className="grid md:grid-cols-3 gap-8">
-            {aboutData.team.map((member, index) => (
+            {aboutData.team?.map((member, index) => (
               <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <img src={member.image} alt={member.name} className="w-full h-64 object-cover" />
                 <div className="p-6">
@@ -271,7 +259,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                         type="text"
                         value={member.name}
                         onChange={(e) => {
-                          const newTeam = [...aboutData.team];
+                          const newTeam = [...(aboutData.team || [])];
                           newTeam[index].name = e.target.value;
                           updateAboutData('team', newTeam);
                         }}
@@ -281,7 +269,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                         type="text"
                         value={member.role}
                         onChange={(e) => {
-                          const newTeam = [...aboutData.team];
+                          const newTeam = [...(aboutData.team || [])];
                           newTeam[index].role = e.target.value;
                           updateAboutData('team', newTeam);
                         }}
@@ -290,7 +278,7 @@ const AboutPage = ({ siteContent, editMode, updateContent }) => {
                       <textarea
                         value={member.bio}
                         onChange={(e) => {
-                          const newTeam = [...aboutData.team];
+                          const newTeam = [...(aboutData.team || [])];
                           newTeam[index].bio = e.target.value;
                           updateAboutData('team', newTeam);
                         }}

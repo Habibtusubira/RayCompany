@@ -25,19 +25,12 @@ const ContactSection = ({ siteContent, editMode, updateContact }) => {
     setSubmitStatus('');
 
     try {
-      // Store in Supabase
-      const { data, error } = await supabase
-        .from('contact_submissions')
-        .insert([{
-          name: formData.name,
-          email: formData.email,
-          message: formData.message,
-          submitted_at: new Date().toISOString()
-        }])
-        .select();
+      // Store using the dataManager (which is exported as 'supabase')
+      const newSubmission = await supabase.addContactSubmission(formData);
 
-      if (error) {
-        throw error;
+      if (!newSubmission) {
+        // The promise from dataManager should not reject, but we can check for a falsy return
+        throw new Error("Submission failed to return a value.");
       }
 
       setSubmitStatus('success');
