@@ -8,7 +8,7 @@ import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
 import LoginModal from './components/LoginModal';
 import ImageModal from './components/ImageModal';
-import { supabase } from './lib/supabase';
+import dataManager from './lib/dataManager';
 
 const ArchitecturalPortfolio = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,221 +22,134 @@ const ArchitecturalPortfolio = () => {
     password: ''
   });
   
-  // Default site content structure
-  const [siteContent, setSiteContent] = useState({
-    companyName: 'Ergonomics',
-    subtitle: 'Design & Construction',
-    slogan: 'Building Excellence Through Innovation',
-    description: 'We specialize in architectural design, project management, and construction services. Our team delivers exceptional results that blend functionality with aesthetic appeal.',
-    heroImage: '',
-    services: [
-      'Architectural Design',
-      'Project Management', 
-      'Construction Services',
-      'Interior Design',
-      'Renovation & Remodeling'
-    ],
-    contacts: {
-      phone1: '0702780285',
-      phone2: '0760395798',
-      email: 'ergonomicsd&c@gmail.com',
-      location: 'Kampala, Uganda'
-    }
-  });
+  // Site content from data manager
+  const [siteContent, setSiteContent] = useState(dataManager.getSiteContent());
 
-  // Sample project data
-  const [projects, setProjects] = useState([]);
-  // const [adminCredentials, setAdminCredentials] = useState({
-  //   username: 'ergonomics_admin',
-  //   password: 'ergo2024!'
-  // });
+  // Projects from data manager
+  const [projects, setProjects] = useState(dataManager.getProjects());
 
-  // Fetch site content from Supabase
+  // Fetch initial data
   useEffect(() => {
-    fetchSiteContent();
-    fetchProjects();
-    fetchAdminCredentials();
+    // Check if we have data in localStorage (from previous edits)
+    const savedSiteContent = localStorage.getItem('siteContent');
+    const savedProjects = localStorage.getItem('projects');
+    
+    if (savedSiteContent) {
+      setSiteContent(JSON.parse(savedSiteContent));
+    }
+    
+    if (savedProjects) {
+      setProjects(JSON.parse(savedProjects));
+    }
+    
+    setLoading(false);
   }, []);
-
-  const fetchSiteContent = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_content')
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error fetching site content:', error);
-      } else if (data) {
-        setSiteContent(data.content);
-      }
-    } catch (error) {
-      console.error('Error in fetchSiteContent:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching projects:', error);
-      } else if (data) {
-        setProjects(data);
-      }
-    } catch (error) {
-      console.error('Error in fetchProjects:', error);
-    }
-  };
-
-  const fetchAdminCredentials = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error fetching admin credentials:', error);
-      } else if (data) {
-          const username= data.admin_username;
-          const password= data.admin_password;
-      }
-    } catch (error) {
-      console.error('Error in fetchAdminCredentials:', error);
-    }
-  };
 
   const updateSiteContent = async (updatedContent) => {
     try {
-      const { error } = await supabase
-        .from('site_content')
-        .upsert({
-          id: 1,
-          content: updatedContent,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error updating site content:', error);
-        return false;
-      }
+      await dataManager.updateSiteContent(updatedContent);
       setSiteContent(updatedContent);
       return true;
     } catch (error) {
-      console.error('Error in updateSiteContent:', error);
+      console.error('Error updating site content:', error);
       return false;
     }
   };
 
   // Add this useEffect to handle authentication state manually
-useEffect(() => {
-  // Check if user session exists in localStorage
-  const savedSession = localStorage.getItem("isAdminLoggedIn");
-  if (savedSession === "true") {
-    setIsLoggedIn(true);
-  }
-}, []);
+  useEffect(() => {
+    // Check if user session exists in localStorage
+    const savedSession = localStorage.getItem("isAdminLoggedIn");
+    if (savedSession === "true") {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
-// Login function using admin_settings table
-// Add this state for login attempts
-const [loginAttempts, setLoginAttempts] = useState(0);
-const [isLoginDisabled, setIsLoginDisabled] = useState(false);
+  // Login function using data manager
+  // Add this state for login attempts
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isLoginDisabled, setIsLoginDisabled] = useState(false);
 
-// Enhanced login function with rate limiting
-const handleLogin = async () => {
-  if (isLoginDisabled) {
-    alert('Too many failed attempts. Please try again later.');
-    return;
-  }
-
-  try {
-    // Verify credentials against admin_settings table
-    const { data, error } = await supabase
-      .from('admin_settings')
-      .select('*')
-      .eq('admin_username', loginForm.username)
-      .eq('admin_password', loginForm.password)
-      .single();
-
-    if (error) {
-      console.error('Database query error:', error);
-      handleFailedLogin();
+  // Enhanced login function with rate limiting
+  const handleLogin = async () => {
+    if (isLoginDisabled) {
+      alert('Too many failed attempts. Please try again later.');
       return;
     }
 
-    if (data) {
-      // Successful login
-      setIsLoggedIn(true);
-      setShowLogin(false);
-      setLoginForm({ username: '', password: '' });
-      setLoginAttempts(0);
-      
-      // Store login state
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('loginTimestamp', Date.now().toString());
-    } else {
-      // Failed login
+    try {
+      // Verify credentials against data manager
+      const isValid = await dataManager.verifyAdminCredentials(
+        loginForm.username,
+        loginForm.password
+      );
+
+      if (isValid) {
+        // Successful login
+        setIsLoggedIn(true);
+        setShowLogin(false);
+        setLoginForm({ username: '', password: '' });
+        setLoginAttempts(0);
+        
+        // Store login state
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTimestamp', Date.now().toString());
+      } else {
+        // Failed login
+        handleFailedLogin();
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       handleFailedLogin();
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    handleFailedLogin();
-  }
-};
+  };
 
-// Handle failed login attempts
-const handleFailedLogin = () => {
-  const newAttempts = loginAttempts + 1;
-  setLoginAttempts(newAttempts);
-  
-  if (newAttempts >= 3) {
-    setIsLoginDisabled(true);
-    setTimeout(() => {
-      setIsLoginDisabled(false);
-      setLoginAttempts(0);
-    }, 30000); // 30 second lockout
-    alert('Too many failed attempts. Please try again in 30 seconds.');
-  } else {
-    alert(`Invalid credentials. ${3 - newAttempts} attempts remaining.`);
-  }
-};
-
-// Check session expiration on app load
-useEffect(() => {
-  const checkSession = () => {
-    const loginTimestamp = localStorage.getItem('loginTimestamp');
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  // Handle failed login attempts
+  const handleFailedLogin = () => {
+    const newAttempts = loginAttempts + 1;
+    setLoginAttempts(newAttempts);
     
-    if (isLoggedIn && loginTimestamp) {
-      const eightHours = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
-      const currentTime = Date.now();
-      
-      if (currentTime - parseInt(loginTimestamp) > eightHours) {
-        // Session expired
-        handleLogout();
-        alert('Your session has expired. Please log in again.');
-      } else {
-        setIsLoggedIn(true);
-      }
+    if (newAttempts >= 3) {
+      setIsLoginDisabled(true);
+      setTimeout(() => {
+        setIsLoginDisabled(false);
+        setLoginAttempts(0);
+      }, 30000); // 30 second lockout
+      alert('Too many failed attempts. Please try again in 30 seconds.');
+    } else {
+      alert(`Invalid credentials. ${3 - newAttempts} attempts remaining.`);
     }
   };
-  
-  checkSession();
-}, []);
 
-// Logout function
-const handleLogout = () => {
-  setIsLoggedIn(false);
-  setEditMode(false);
-  localStorage.removeItem("isAdminLoggedIn");
-};
+  // Check session expiration on app load
+  useEffect(() => {
+    const checkSession = () => {
+      const loginTimestamp = localStorage.getItem('loginTimestamp');
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      
+      if (isLoggedIn && loginTimestamp) {
+        const eightHours = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+        const currentTime = Date.now();
+        
+        if (currentTime - parseInt(loginTimestamp) > eightHours) {
+          // Session expired
+          handleLogout();
+          alert('Your session has expired. Please log in again.');
+        } else {
+          setIsLoggedIn(true);
+        }
+      }
+    };
+    
+    checkSession();
+  }, []);
 
+  // Logout function
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setEditMode(false);
+    localStorage.removeItem("isAdminLoggedIn");
+  };
 
   const updateContent = async (field, value) => {
     const updatedContent = {
@@ -277,54 +190,30 @@ const handleLogout = () => {
     };
 
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([newProject])
-        .select();
-
-      if (error) {
-        console.error('Error adding project:', error);
-      } else if (data) {
-        setProjects([data[0], ...projects]);
-      }
+      const addedProject = await dataManager.addProject(newProject);
+      setProjects([addedProject, ...projects]);
     } catch (error) {
-      console.error('Error in addProject:', error);
+      console.error('Error adding project:', error);
     }
   };
 
   const updateProject = async (id, field, value) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ [field]: value })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error updating project:', error);
-      } else {
-        setProjects(prev => prev.map(project => 
-          project.id === id ? { ...project, [field]: value } : project
-        ));
-      }
+      await dataManager.updateProject(id, field, value);
+      setProjects(prev => prev.map(project => 
+        project.id === id ? { ...project, [field]: value } : project
+      ));
     } catch (error) {
-      console.error('Error in updateProject:', error);
+      console.error('Error updating project:', error);
     }
   };
 
   const deleteProject = async (id) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting project:', error);
-      } else {
-        setProjects(prev => prev.filter(project => project.id !== id));
-      }
+      await dataManager.deleteProject(id);
+      setProjects(prev => prev.filter(project => project.id !== id));
     } catch (error) {
-      console.error('Error in deleteProject:', error);
+      console.error('Error deleting project:', error);
     }
   };
 
@@ -344,7 +233,6 @@ const handleLogout = () => {
         loginForm={loginForm}
         setLoginForm={setLoginForm}
         handleLogin={handleLogin}
-        loginCredentials={fetchAdminCredentials}
       />
       
       <ImageModal 

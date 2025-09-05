@@ -1,0 +1,48 @@
+{
+  "siteContent": {
+    "companyName": "Ergonomics",
+    "subtitle": "Design & Construction",
+    "slogan": "Building Excellence Through Innovation",
+    "description": "We specialize in architectural design, project management, and construction services. Our team delivers exceptional results that blend functionality with aesthetic appeal.",
+    "heroImage": "",
+    "services": [
+      "Architectural Design",
+      "Project Management",
+      "Construction Services",
+      "Interior Design",
+      "Renovation & Remodeling"
+    ],
+    "contacts": {
+      "phone1": "0702780285",
+      "phone2": "0760395798",
+      "email": "ergonomicsd&c@gmail.com",
+      "location": "Kampala, Uganda"
+    }
+  },
+  "projects": [
+    {
+      "id": 1,
+      "title": "Modern Villa",
+      "category": "Residential",
+      "image": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "description": "A stunning modern villa with contemporary design elements and sustainable features.",
+      "location": "Kampala, Uganda",
+      "year": "2023",
+      "size": "4500 sq ft"
+    },
+    {
+      "id": 2,
+      "title": "Commercial Complex",
+      "category": "Commercial",
+      "image": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "description": "A state-of-the-art commercial complex with modern amenities and efficient space utilization.",
+      "location": "Nairobi, Kenya",
+      "year": "2022",
+      "size": "12000 sq ft"
+    }
+  ],
+  "admin": {
+    "username": "ergonomics_admin",
+    "password": "$2a$10$rZ7znSJXxkSGE.Pse2IatOa.Dso.J/RGMf3HwFwzbx8bUdi1zY5mm"
+  }
+}
